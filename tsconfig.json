@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "removeComments": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "declaration":true,
+    "outDir": "dist",
+    "rootDirs": ["src", "test"]
+  },
+  "typeRoots": [
+    "node_modules/@types"
+  ],
+  "include": [
+    "src/**/*",
+    "test/**/*"
+  ],
+  "exclude":[
+    "bin",
+    "node_nodules",
+    "test-templates",
+    "test-output"
+  ]
+}

@@ -14,6 +14,6 @@ export interface SessionDataInsert extends SessionData {
 
 export interface SessionRecord extends SessionDataInsert {
     $loki?: number; // cache id
-    id?: string;  // mongodb id
+    _id?: string;  // mongodb id
     cacheTTL?: number;
 }

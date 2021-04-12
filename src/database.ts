@@ -1,4 +1,4 @@
-import { MongoClient, Db, Collection } from 'mongodb';
+import { MongoClient, Db, Collection, WithId, OptionalId } from 'mongodb';
 import { stringIsEmpty } from 'sb-util-ts';
 import { DefaultConfig, ISessionConfig } from './config';
 import { SessionDataInsert, SessionRecord } from './types';
@@ -54,6 +54,14 @@ export class Database {
     protected static connection: MongoConnection = new MongoConnection();
     protected static config: ISessionConfig = DefaultConfig;
 
+    protected static normalizeRecord<T>(org: OptionalId<T>): T & { _id: string } {
+        if (!org) return null;
+        const meta = Object.assign({}, org);
+        const _id: string = meta._id.toHexString();
+        delete meta._id;
+        return Object.assign(<T>meta, { _id });
+    }
+
     protected static async connect(): Promise<Collection<SessionRecord>> {
         const client = await this.connection.open();
         return client.db(this.config.sessionDbName).collection(this.config.sessionCollection);
@@ -69,9 +77,15 @@ export class Database {
 
     static async addSession(session: SessionDataInsert): Promise<SessionRecord> {
         const collection = await this.connect();
-        const result = await collection.insertOne(session);
-        const id = result.insertedId.toHexString();
-        return Object.assign(session, { id });
+        const result = await collection.insertOne(<OptionalId<SessionRecord>>session);
+        const _id = result.insertedId.toHexString();
+        return Object.assign(session, { _id });
+    }
+
+    static async getSession(token: string): Promise<SessionRecord | null> {
+        const collection = await this.connect();
+        const session = await collection.findOne<SessionRecord & WithId<SessionRecord>>({ token });
+        return this.normalizeRecord<SessionRecord>(session);
     }
 
     static async closeConnection(force?: boolean): Promise<void> {

@@ -1,4 +1,4 @@
-import { MongoClient, Collection } from 'mongodb';
+import { MongoClient, Collection, OptionalId } from 'mongodb';
 import { ISessionConfig } from './config';
 import { SessionDataInsert, SessionRecord } from './types';
 declare class MongoConnection {
@@ -17,9 +17,13 @@ declare class MongoConnection {
 export declare class Database {
     protected static connection: MongoConnection;
     protected static config: ISessionConfig;
+    protected static normalizeRecord<T>(org: OptionalId<T>): T & {
+        _id: string;
+    };
     protected static connect(): Promise<Collection<SessionRecord>>;
     static setConfig(config: Partial<ISessionConfig>): void;
     static addSession(session: SessionDataInsert): Promise<SessionRecord>;
+    static getSession(token: string): Promise<SessionRecord | null>;
     static closeConnection(force?: boolean): Promise<void>;
 }
 export {};

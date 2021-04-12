@@ -61,6 +61,14 @@ class MongoConnection {
     }
 }
 class Database {
+    static normalizeRecord(org) {
+        if (!org)
+            return null;
+        const meta = Object.assign({}, org);
+        const _id = meta._id.toHexString();
+        delete meta._id;
+        return Object.assign(meta, { _id });
+    }
     static connect() {
         return __awaiter(this, void 0, void 0, function* () {
             const client = yield this.connection.open();
@@ -78,8 +86,15 @@ class Database {
         return __awaiter(this, void 0, void 0, function* () {
             const collection = yield this.connect();
             const result = yield collection.insertOne(session);
-            const id = result.insertedId.toHexString();
-            return Object.assign(session, { id });
+            const _id = result.insertedId.toHexString();
+            return Object.assign(session, { _id });
+        });
+    }
+    static getSession(token) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const collection = yield this.connect();
+            const session = yield collection.findOne({ token });
+            return this.normalizeRecord(session);
         });
     }
     static closeConnection(force) {

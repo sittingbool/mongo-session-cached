@@ -31,22 +31,47 @@ class TestDatabase extends database_1.Database {
     }
 }
 let DatabaseUnitTests = class DatabaseUnitTests {
+    static before() {
+        for (const user of Object.values(test_data_1.TestDataSessions)) {
+            user.tokens = [];
+        }
+    }
     static after() {
         return __awaiter(this, void 0, void 0, function* () {
             yield TestDatabase.removeAll();
         });
     }
-    addSessionSuccessfully() {
+    addSimpleSessionCorrectly() {
         return __awaiter(this, void 0, void 0, function* () {
             const { userId, username } = test_data_1.TestDataSessions['user1'];
             const result = yield database_1.Database.addSession(values_1.makeSession(config_1.DefaultConfig, userId, username));
             chai_1.expect(sb_util_ts_1.mapIsEmpty(result)).to.be.false;
+            chai_1.expect(result.token).to.be.a('string');
+            chai_1.expect(result.token.length).to.be.above(32);
+            chai_1.expect(result.username).to.equal(username);
+            chai_1.expect(result.userId).to.equal(userId);
+            test_data_1.TestDataSessions['user1'].tokens.push(result.token);
+        });
+    }
+    getSimpleSessionCorrectly() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { userId, username } = test_data_1.TestDataSessions['user1'];
+            const token = test_data_1.TestDataSessions['user1'].tokens[0];
+            const result = yield database_1.Database.getSession(token);
+            chai_1.expect(sb_util_ts_1.mapIsEmpty(result)).to.be.false;
+            chai_1.expect(result.token).to.be.a('string');
+            chai_1.expect(result.token.length).to.be.above(32);
+            chai_1.expect(result.username).to.equal(username);
+            chai_1.expect(result.userId).to.equal(userId);
         });
     }
 };
 __decorate([
     mocha_1.test
-], DatabaseUnitTests.prototype, "addSessionSuccessfully", null);
+], DatabaseUnitTests.prototype, "addSimpleSessionCorrectly", null);
+__decorate([
+    mocha_1.test
+], DatabaseUnitTests.prototype, "getSimpleSessionCorrectly", null);
 DatabaseUnitTests = __decorate([
     mocha_1.suite
 ], DatabaseUnitTests);

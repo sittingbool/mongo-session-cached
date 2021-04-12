@@ -17,14 +17,37 @@ class TestDatabase extends Database {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 @suite class DatabaseUnitTests {
 
+    static before() {
+        for (const user of Object.values(TestDataSessions)) {
+            user.tokens = [];
+        }
+    }
+
     static async after(): Promise<void> {
         await TestDatabase.removeAll();
     }
 
     @test
-    async addSessionSuccessfully() {
+    async addSimpleSessionCorrectly() {
         const { userId , username } = TestDataSessions['user1'];
         const result = await Database.addSession(makeSession(DefaultConfig, userId , username ));
         expect(mapIsEmpty(result)).to.be.false;
+        expect(result.token).to.be.a('string');
+        expect(result.token.length).to.be.above(32);
+        expect(result.username).to.equal(username);
+        expect(result.userId).to.equal(userId);
+        TestDataSessions['user1'].tokens.push(result.token);
+    }
+
+    @test
+    async getSimpleSessionCorrectly() {
+        const { userId , username } = TestDataSessions['user1'];
+        const token = TestDataSessions['user1'].tokens[0];
+        const result = await Database.getSession(token);
+        expect(mapIsEmpty(result)).to.be.false;
+        expect(result.token).to.be.a('string');
+        expect(result.token.length).to.be.above(32);
+        expect(result.username).to.equal(username);
+        expect(result.userId).to.equal(userId);
     }
 }

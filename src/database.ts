@@ -7,11 +7,11 @@ class MongoConnection {
     private isConnected = false;
     private isConnecting = false;
     private onConnectCallbacks: ((err) => void)[] = [];
+    private readonly client: MongoClient;
 
-    constructor(
-        private client = new MongoClient(DefaultConfig.mongoUrl),
-        private dbName: string = DefaultConfig.sessionDbName
-    ) {}
+    constructor(config: { mongoUrl: string } = DefaultConfig) {
+        this.client = new MongoClient(config.mongoUrl);
+    }
 
     private resolveCallbacks(err: Error = null) {
         for (const cb of this.onConnectCallbacks) {
@@ -19,7 +19,7 @@ class MongoConnection {
         }
     }
 
-    private async connect(): Promise<Db> {
+    private async connect(): Promise<MongoClient> {
         this.isConnecting = true;
         try {
             await this.client.connect();
@@ -29,15 +29,15 @@ class MongoConnection {
             console.error('MongoDb connection error', err);
             this.resolveCallbacks(err);
         }
-        return this.client.db(this.dbName);
+        return this.client;
     }
 
-    async open(): Promise<Db> {
-        if (this.isConnected) return this.client.db(this.dbName);
+    async open(): Promise<MongoClient> {
+        if (this.isConnected) return this.client;
         if (this.isConnecting) {
-            return new Promise<Db>((resolve, reject) => {
+            return new Promise<MongoClient>((resolve, reject) => {
                 this.onConnectCallbacks.push(err => {
-                    return err ? reject(err) : this.client.db(this.dbName);
+                    return err ? reject(err) : this.client;
                 });
             });
         }
@@ -52,19 +52,19 @@ class MongoConnection {
 
 export class Database {
     protected static connection: MongoConnection = new MongoConnection();
-    protected static collectionName: string = DefaultConfig.sessionCollection;
+    protected static config: ISessionConfig = DefaultConfig;
 
     protected static async connect(): Promise<Collection<SessionRecord>> {
-        const db = await this.connection.open();
-        return db.collection(this.collectionName);
+        const client = await this.connection.open();
+        return client.db(this.config.sessionDbName).collection(this.config.sessionCollection);
     }
 
     static setConfig(config: Partial<ISessionConfig>): void {
-        const { mongoUrl, sessionDbName, sessionCollection } = config;
-        if (!stringIsEmpty(mongoUrl) || !stringIsEmpty(sessionDbName)) {
-            this.connection = new MongoConnection(new MongoClient(mongoUrl), sessionDbName);
+        const urlHasChanged = !stringIsEmpty(config.mongoUrl) && config.mongoUrl !== this.config.mongoUrl;
+        Object.assign(this.config, config);
+        if (urlHasChanged) {
+            this.connection = new MongoConnection(this.config);
         }
-        this.collectionName = sessionCollection || this.collectionName;
     }
 
     static async addSession(session: SessionDataInsert): Promise<SessionRecord> {

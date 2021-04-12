@@ -24,23 +24,23 @@
   "homepage": "https://github.com/sittingbool/mongo-session-cached#readme",
   "dependencies": {
     "lokijs": "^1.5.11",
-    "mongodb": "^3.6.4",
+    "mongodb": "^3.6.6",
     "sb-util-ts": "^2.8.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@testdeck/mocha": "^0.1.2",
-    "@types/chai": "^4.2.15",
-    "@types/lokijs": "^1.5.3",
-    "@types/mocha": "^8.2.1",
-    "@types/mongodb": "^3.6.9",
-    "@types/node": "^14.14.32",
+    "@types/chai": "^4.2.16",
+    "@types/lokijs": "^1.5.4",
+    "@types/mocha": "^8.2.2",
+    "@types/mongodb": "^3.6.12",
+    "@types/node": "^14.14.37",
     "@types/uuid": "^8.3.0",
-    "@typescript-eslint/eslint-plugin": "^4.17.0",
-    "@typescript-eslint/parser": "^4.17.0",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
     "chai": "^4.3.4",
-    "eslint": "^7.21.0",
+    "eslint": "^7.24.0",
     "mocha": "^8.3.2",
-    "typescript": "^4.2.3"
+    "typescript": "^4.2.4"
   }
 }

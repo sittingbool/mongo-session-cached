@@ -14,12 +14,11 @@ const mongodb_1 = require("mongodb");
 const sb_util_ts_1 = require("sb-util-ts");
 const config_1 = require("./config");
 class MongoConnection {
-    constructor(client = new mongodb_1.MongoClient(config_1.DefaultConfig.mongoUrl), dbName = config_1.DefaultConfig.sessionDbName) {
-        this.client = client;
-        this.dbName = dbName;
+    constructor(config = config_1.DefaultConfig) {
         this.isConnected = false;
         this.isConnecting = false;
         this.onConnectCallbacks = [];
+        this.client = new mongodb_1.MongoClient(config.mongoUrl);
     }
     resolveCallbacks(err = null) {
         for (const cb of this.onConnectCallbacks) {
@@ -38,17 +37,17 @@ class MongoConnection {
                 console.error('MongoDb connection error', err);
                 this.resolveCallbacks(err);
             }
-            return this.client.db(this.dbName);
+            return this.client;
         });
     }
     open() {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.isConnected)
-                return this.client.db(this.dbName);
+                return this.client;
             if (this.isConnecting) {
                 return new Promise((resolve, reject) => {
                     this.onConnectCallbacks.push(err => {
-                        return err ? reject(err) : this.client.db(this.dbName);
+                        return err ? reject(err) : this.client;
                     });
                 });
             }
@@ -64,16 +63,16 @@ class MongoConnection {
 class Database {
     static connect() {
         return __awaiter(this, void 0, void 0, function* () {
-            const db = yield this.connection.open();
-            return db.collection(this.collectionName);
+            const client = yield this.connection.open();
+            return client.db(this.config.sessionDbName).collection(this.config.sessionCollection);
         });
     }
     static setConfig(config) {
-        const { mongoUrl, sessionDbName, sessionCollection } = config;
-        if (!sb_util_ts_1.stringIsEmpty(mongoUrl) || !sb_util_ts_1.stringIsEmpty(sessionDbName)) {
-            this.connection = new MongoConnection(new mongodb_1.MongoClient(mongoUrl), sessionDbName);
+        const urlHasChanged = !sb_util_ts_1.stringIsEmpty(config.mongoUrl) && config.mongoUrl !== this.config.mongoUrl;
+        Object.assign(this.config, config);
+        if (urlHasChanged) {
+            this.connection = new MongoConnection(this.config);
         }
-        this.collectionName = sessionCollection || this.collectionName;
     }
     static addSession(session) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -91,5 +90,5 @@ class Database {
 }
 exports.Database = Database;
 Database.connection = new MongoConnection();
-Database.collectionName = config_1.DefaultConfig.sessionCollection;
+Database.config = config_1.DefaultConfig;
 //# sourceMappingURL=database.js.map

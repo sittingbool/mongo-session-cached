@@ -2,7 +2,7 @@
   "name": "@sittingbool/mongo-session-cached",
   "version": "1.0.0",
   "description": "A session handler using mongodb top store the sessions and a local cache for better performance",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "test": "mocha dist/test/index.js"
   },

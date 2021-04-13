@@ -10,10 +10,8 @@ export declare class Cache {
     protected static cacheForName(name: string, options?: Partial<CollectionOptions<any>>): LokiCollection;
     protected static stripLokiProperties<T>(data: T | (T & LokiObj)): T;
     static setConfig(config: Partial<ISessionConfig>): void;
-    static addSession(token: string, userId: string | number, username: string, additionalData?: {
-        [key: string]: unknown;
-    }): SessionRecord;
-    static extendSession(oldToken: string, newToken: string): SessionRecord | null;
+    static addSession(session: SessionRecord): SessionRecord;
+    static updateSessionExtension(token: string, session: SessionRecord): SessionRecord;
     static getSession(token: string, extendCacheTTL?: boolean): SessionRecord | null;
     static addToCache<T>(cacheName: string, data: T, cacheOptions?: Partial<CollectionOptions<any>>): T;
     static removeSession(token: string): number;

@@ -18,7 +18,7 @@ class MongoConnection {
         this.isConnected = false;
         this.isConnecting = false;
         this.onConnectCallbacks = [];
-        this.client = new mongodb_1.MongoClient(config.mongoUrl);
+        this.client = new mongodb_1.MongoClient(config.mongoUrl, { useUnifiedTopology: true });
     }
     resolveCallbacks(err = null) {
         for (const cb of this.onConnectCallbacks) {
@@ -95,6 +95,15 @@ class Database {
             const collection = yield this.connect();
             const session = yield collection.findOne({ token });
             return this.normalizeRecord(session);
+        });
+    }
+    static updateSession(session) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const collection = yield this.connect();
+            const _id = mongodb_1.ObjectID.createFromHexString(session._id);
+            const { token, refreshToken, expirationDate, refreshDate } = session;
+            yield collection.updateOne(_id, { $set: { token, refreshToken, expirationDate, refreshDate } });
+            return session;
         });
     }
     static closeConnection(force) {

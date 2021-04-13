@@ -1,7 +1,9 @@
 import { v4 as uuidV4 } from 'uuid';
 import { ISessionConfig } from './config';
-import { SessionDataInsert } from './types';
+import { SessionDataInsert, SessionRecord } from './types';
 
+
+// TODO: unit tests
 
 export function newSessionToken(): string {
     return 's#' + uuidV4();
@@ -22,9 +24,19 @@ export function sessionDefaults(config: ISessionConfig, token?: string): ISessio
 }
 
 export function cacheTTl(config: ISessionConfig): number {
-    return config.defaultCacheTTl * 1000;
+    return Date.now() + config.defaultCacheTTl * 1000;
 }
 
-export function makeSession(config: ISessionConfig, userId: string | number, username: string, token?: string): SessionDataInsert {
-    return Object.assign({ userId, username }, sessionDefaults(config, token));
+export function makeSession(config: ISessionConfig, userId: string | number, username: string, additional: { [key: string]: unknown } = null, token?: string): SessionDataInsert {
+    const data: Partial<SessionDataInsert> = { userId, username };
+    data.additional = additional || null;
+    return <SessionDataInsert>Object.assign(data, sessionDefaults(config, token));
+}
+
+export function refreshSessionToken(config: ISessionConfig, session: SessionRecord): SessionRecord {
+    session.token = newSessionToken();
+    session.refreshToken = newRefreshToken();
+    session.expirationDate = Date.now() + (config.sessionTTl * 1000);
+    session.refreshDate = Date.now() + (config.tokenTTl * 1000);
+    return session;
 }

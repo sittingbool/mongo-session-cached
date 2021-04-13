@@ -25,8 +25,9 @@ class TestCache extends cache_1.Cache {
 let CacheUnitTests = CacheUnitTests_1 = class CacheUnitTests {
     addSessionForUser(testDataKey, checkResult = true) {
         const token = values_1.newSessionToken();
-        const { userId, username } = test_data_1.TestDataSessions[testDataKey];
-        const session = TestCache.addSession(token, userId, username);
+        const { userId, username, additional } = test_data_1.TestDataSessions[testDataKey];
+        const sessionData = values_1.makeSession(TestCache.currentConfig, userId, username, additional, token);
+        const session = TestCache.addSession(sessionData);
         if (checkResult) {
             const addedSession = TestCache.sessionsCol.find({ token });
             chai_1.expect(sb_util_ts_1.mapIsEmpty(addedSession)).to.be.false;
@@ -43,8 +44,9 @@ let CacheUnitTests = CacheUnitTests_1 = class CacheUnitTests {
     addSimpleSessionCorrectly() {
         const token = values_1.newSessionToken();
         const { userId, username } = test_data_1.TestDataSessions['user1'];
+        const session = values_1.makeSession(TestCache.currentConfig, userId, username, null, token);
         CacheUnitTests_1.testTokens[token] =
-            TestCache.addSession(token, userId, username);
+            TestCache.addSession(session);
         const allSessions = TestCache.sessionsCol.find();
         const addedSession = allSessions.find(s => s.token === token);
         chai_1.expect(sb_util_ts_1.mapIsEmpty(addedSession)).to.be.false;
@@ -55,8 +57,9 @@ let CacheUnitTests = CacheUnitTests_1 = class CacheUnitTests {
     addAdvancedSessionCorrectly() {
         const token = values_1.newSessionToken();
         const { userId, username, additional } = test_data_1.TestDataSessions['user-w-additional1'];
+        const session = values_1.makeSession(TestCache.currentConfig, userId, username, additional, token);
         CacheUnitTests_1.testTokens[token] =
-            TestCache.addSession(token, userId, username, additional);
+            TestCache.addSession(session);
         const allSessions = TestCache.sessionsCol.find();
         const addedSession = allSessions.find(s => s.token === token);
         chai_1.expect(sb_util_ts_1.mapIsEmpty(addedSession)).to.be.false;

@@ -2,6 +2,7 @@ import * as Loki from 'lokijs';
 import { LokiMemoryAdapter, Collection as LokiCollection } from 'lokijs';
 import { SessionRecord } from './types';
 import { DefaultConfig, ISessionConfig } from './config';
+import { cacheTTl } from './values';
 
 const db = new Loki('mongo-session-cached.db', { adapter: new LokiMemoryAdapter() });
 
@@ -15,6 +16,7 @@ export class Cache {
     }
 
     protected static stripLokiProperties<T>(data: T | (T & LokiObj)): T {
+        if (!data) return data;
         const obj = <T & LokiObj>Object.assign({}, data);
         delete obj.$loki;
         delete obj.meta;
@@ -25,26 +27,23 @@ export class Cache {
         this.config = Object.assign(DefaultConfig, config);
     }
 
-    static addSession(token: string, userId: string | number, username: string, additionalData: { [key: string]: unknown } = null): SessionRecord {
-        const cacheTTL = Date.now() + (this.config.defaultCacheTTl * 1000);
-        const expirationDate = Date.now() + (this.config.sessionTTl * 1000);
-        const refreshDate = Date.now() + (this.config.tokenTTl * 1000);
-        const data: SessionRecord = { token, userId, username, expirationDate, refreshDate, cacheTTL, additional: additionalData };
-        return this.stripLokiProperties<SessionRecord>(this.sessions.insert(data));
+    static addSession(session: SessionRecord): SessionRecord {
+        const record = Object.assign({ cacheTTL: cacheTTl(this.config) }, session);
+        return this.stripLokiProperties<SessionRecord>(this.sessions.insert(record));
     }
 
-    static extendSession(oldToken: string, newToken: string): SessionRecord | null {
-        const session = this.sessions.find({ token: oldToken })[0] || null;
-        if (!session) return null;
-        const { userId, username, additional } = session;
-        this.sessions.remove(session);
-        return this.addSession(newToken, userId, username, additional);
+    static updateSessionExtension(token: string, session: SessionRecord): SessionRecord {
+        const record = <SessionRecord>this.sessions.findOne({ token });
+        if (!record) return null;
+        Object.assign(record, session);
+        this.sessions.update(record);
+        return this.stripLokiProperties<SessionRecord>(record);
     }
 
     static getSession(token: string, extendCacheTTL: boolean = true): SessionRecord | null {
         const session = this.sessions.find({ token })[0] || null;
         if (session && extendCacheTTL) {
-            session.cacheTTL = Date.now() + (this.config.defaultCacheTTl * 1000);
+            session.cacheTTL = cacheTTl(this.config);
         }
         return this.stripLokiProperties<SessionRecord>(session);
     }

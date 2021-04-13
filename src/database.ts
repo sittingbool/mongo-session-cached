@@ -1,4 +1,4 @@
-import { MongoClient, Db, Collection, WithId, OptionalId } from 'mongodb';
+import { MongoClient, ObjectID, Collection, WithId, OptionalId } from 'mongodb';
 import { stringIsEmpty } from 'sb-util-ts';
 import { DefaultConfig, ISessionConfig } from './config';
 import { SessionDataInsert, SessionRecord } from './types';
@@ -10,7 +10,7 @@ class MongoConnection {
     private readonly client: MongoClient;
 
     constructor(config: { mongoUrl: string } = DefaultConfig) {
-        this.client = new MongoClient(config.mongoUrl);
+        this.client = new MongoClient(config.mongoUrl, { useUnifiedTopology: true });
     }
 
     private resolveCallbacks(err: Error = null) {
@@ -86,6 +86,14 @@ export class Database {
         const collection = await this.connect();
         const session = await collection.findOne<SessionRecord & WithId<SessionRecord>>({ token });
         return this.normalizeRecord<SessionRecord>(session);
+    }
+
+    static async updateSession(session: SessionRecord): Promise<SessionRecord> {
+        const collection = await this.connect();
+        const _id:ObjectID = ObjectID.createFromHexString(session._id);
+        const { token, refreshToken, expirationDate, refreshDate } = session;
+        await collection.updateOne(_id, { $set: { token, refreshToken, expirationDate, refreshDate } });
+        return session;
     }
 
     static async closeConnection(force?: boolean): Promise<void> {

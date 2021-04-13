@@ -24,6 +24,7 @@ export declare class Database {
     static setConfig(config: Partial<ISessionConfig>): void;
     static addSession(session: SessionDataInsert): Promise<SessionRecord>;
     static getSession(token: string): Promise<SessionRecord | null>;
+    static updateSession(session: SessionRecord): Promise<SessionRecord>;
     static closeConnection(force?: boolean): Promise<void>;
 }
 export {};

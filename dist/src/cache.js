@@ -4,12 +4,15 @@ exports.Cache = void 0;
 const Loki = require("lokijs");
 const lokijs_1 = require("lokijs");
 const config_1 = require("./config");
+const values_1 = require("./values");
 const db = new Loki('mongo-session-cached.db', { adapter: new lokijs_1.LokiMemoryAdapter() });
 class Cache {
     static cacheForName(name, options) {
         return this.namedCaches[name] || db.addCollection(name, options);
     }
     static stripLokiProperties(data) {
+        if (!data)
+            return data;
         const obj = Object.assign({}, data);
         delete obj.$loki;
         delete obj.meta;
@@ -18,25 +21,22 @@ class Cache {
     static setConfig(config) {
         this.config = Object.assign(config_1.DefaultConfig, config);
     }
-    static addSession(token, userId, username, additionalData = null) {
-        const cacheTTL = Date.now() + (this.config.defaultCacheTTl * 1000);
-        const expirationDate = Date.now() + (this.config.sessionTTl * 1000);
-        const refreshDate = Date.now() + (this.config.tokenTTl * 1000);
-        const data = { token, userId, username, expirationDate, refreshDate, cacheTTL, additional: additionalData };
-        return this.stripLokiProperties(this.sessions.insert(data));
+    static addSession(session) {
+        const record = Object.assign({ cacheTTL: values_1.cacheTTl(this.config) }, session);
+        return this.stripLokiProperties(this.sessions.insert(record));
     }
-    static extendSession(oldToken, newToken) {
-        const session = this.sessions.find({ token: oldToken })[0] || null;
-        if (!session)
+    static updateSessionExtension(token, session) {
+        const record = this.sessions.findOne({ token });
+        if (!record)
             return null;
-        const { userId, username, additional } = session;
-        this.sessions.remove(session);
-        return this.addSession(newToken, userId, username, additional);
+        Object.assign(record, session);
+        this.sessions.update(record);
+        return this.stripLokiProperties(record);
     }
     static getSession(token, extendCacheTTL = true) {
         const session = this.sessions.find({ token })[0] || null;
         if (session && extendCacheTTL) {
-            session.cacheTTL = Date.now() + (this.config.defaultCacheTTl * 1000);
+            session.cacheTTL = values_1.cacheTTl(this.config);
         }
         return this.stripLokiProperties(session);
     }

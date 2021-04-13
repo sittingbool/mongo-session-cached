@@ -5,7 +5,7 @@ import { SessionRecord } from '../src/types';
 import { arrayIsEmpty, IMap, mapIsEmpty } from 'sb-util-ts';
 import { DefaultConfig, ISessionConfig } from '../src/config';
 import { TestDataSessions, TestSessionData } from './test.data';
-import { newSessionToken } from '../src/values';
+import { makeSession, newSessionToken } from '../src/values';
 
 
 class TestCache extends Cache {
@@ -25,8 +25,9 @@ class TestCache extends Cache {
 
     addSessionForUser(testDataKey: string, checkResult: boolean = true): TestSessionData {
         const token = newSessionToken();
-        const { userId , username } = TestDataSessions[testDataKey];
-        const session = TestCache.addSession(token, userId, username);
+        const { userId , username, additional } = TestDataSessions[testDataKey];
+        const sessionData = makeSession(TestCache.currentConfig, userId, username, additional, token);
+        const session = TestCache.addSession(sessionData);
 
         if (checkResult) {
             const addedSession = TestCache.sessionsCol.find({ token });
@@ -52,8 +53,9 @@ class TestCache extends Cache {
     addSimpleSessionCorrectly() {
         const token = newSessionToken();
         const { userId , username } = TestDataSessions['user1'];
+        const session = makeSession(TestCache.currentConfig, userId, username, null, token);
         CacheUnitTests.testTokens[token] =
-            TestCache.addSession(token, userId, username);
+            TestCache.addSession(session);
 
         const allSessions = TestCache.sessionsCol.find();
         const addedSession = allSessions.find(s => s.token === token);
@@ -67,8 +69,9 @@ class TestCache extends Cache {
     addAdvancedSessionCorrectly() {
         const token = newSessionToken();
         const { userId, username, additional } = TestDataSessions['user-w-additional1'];
+        const session = makeSession(TestCache.currentConfig, userId, username, additional, token);
         CacheUnitTests.testTokens[token] =
-            TestCache.addSession(token, userId, username, additional);
+            TestCache.addSession(session);
 
         const allSessions = TestCache.sessionsCol.find();
         const addedSession = allSessions.find(s => s.token === token);
@@ -108,6 +111,7 @@ class TestCache extends Cache {
         expect(arrayIsEmpty(addedSession)).to.be.true;
     }
 
+    // TODO: rework to cacheTTL, handle cleanup in manager
     @test
     removeExpiredSessions() {
         const sessions: TestSessionData[] = [];
